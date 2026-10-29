@@ -1,0 +1,7 @@
+{
+  "qwen": {"embedding": "Qwen/Qwen3-Embedding-0.6B", "reranker": "Qwen/Qwen3-Reranker-0.6B"},
+  "skillret": {"embedding": "ThakiCloud/SKILLRET-Embedding-0.6B", "reranker": "ThakiCloud/SKILLRET-Reranker-0.6B"},
+  "skillrouter": {"embedding": "pipizhao/SkillRouter-Embedding-0.6B", "reranker": "pipizhao/SkillRouter-Reranker-0.6B"},
+  "r3": {"embedding": "tencent/R3-embedding-0.6b", "reranker": "tencent/R3-rerank-0.6b"},
+  "skillret8b": {"embedding": "ThakiCloud/SKILLRET-Embedding-8B", "reranker": "ThakiCloud/SKILLRET-Reranker-0.6B", "quantization": "nf4"}
+}

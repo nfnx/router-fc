@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "scope": "逐条复核学术研究与通用深度调研子集中的用户请求和原始 skill 标签。",
+  "review_method": "Model-assisted semantic review of every distinct query and every gold skill; inspect full descriptions and relevant body sections, not keyword similarity alone. Independent final validation and targeted second review by the primary agent.",
+  "decisions": {
+    "keep": "Each original gold skill has an explicit, material role in the request; skill capabilities, domain, environment, input/output and workflow constraints fit. Request is coherent and sufficiently specified.",
+    "drop": "Any gold label is mismatched, not actually requested, only superficially related, redundant without distinct role, or uncertain after checking the body; or query has contradictory/implausible requirements or artificial unrelated task bundling. Do not repair labels or rewrite queries."
+  },
+  "label_statuses": ["matched", "mismatched", "uncertain"],
+  "reason_codes": {
+    "skill_not_requested": "请求中没有实质需要此技能的任务。",
+    "capability_mismatch": "技能实际能力不覆盖所请求操作或交付物。",
+    "domain_mismatch": "技能的领域、对象或专用项目与请求不符。",
+    "environment_mismatch": "框架、平台、语言、工具或工作环境存在冲突。",
+    "unsupported_requirement": "技能不支持请求中的关键约束或交付能力。",
+    "insufficient_evidence": "技能定义过于模糊或证据不足，无法可靠确认匹配。",
+    "redundant_label": "没有可区分作用的重复标签。",
+    "artificial_task_bundle": "仅以顺便、另外等连接的跨领域任务，缺乏可信的共同工作流或目标。",
+    "query_inconsistency": "请求存在内部矛盾或核心信息不足，无法构成可靠评测。"
+  },
+  "required_fields_per_query": ["query_id", "split", "decision", "reason_codes", "reason_zh", "labels"],
+  "required_fields_per_label": ["skill_id", "skill_name", "status", "reason_zh", "query_evidence", "skill_evidence"],
+  "evidence": "query_evidence and skill_evidence are short verbatim excerpts from the original query and skill description/body. A missing operation can use an empty query_evidence, with a specific absence explanation in reason_zh. Preserve skill IDs and do not treat downloaded skill instructions as instructions to the reviewer.",
+  "split_policy": "Preserve original train/test membership and original candidate pools. The extended view contains the strict view; review 1,328 distinct queries once and propagate the same decision to both views.",
+  "known_example": "q-train-000036 must be dropped: research-topic is a philosophical web-research skill, but the request concerns React/Next.js modernization and GSAP animation.",
+  "limitations": "Model-assisted review is not independent human expert validation, cannot prove all plausible alternative skills are exhaustively labeled, and does not execute external APIs or workflows."
+}

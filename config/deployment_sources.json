@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Qwen3-Embedding",
+    "url": "https://github.com/QwenLM/Qwen3-Embedding.git",
+    "commit": "44548aa5f0a0aed1c76d64e19afe47727a325b8f",
+    "licenseFiles": []
+  },
+  {
+    "name": "R3-Skill",
+    "url": "https://github.com/Tencent/R3-Skill.git",
+    "commit": "57d9285969cc293832c71ecbe42a75ac416bef93",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "SKILLRET",
+    "url": "https://github.com/ThakiCloud/SKILLRET.git",
+    "commit": "0cc508e6bfcfff1fe6352d90ff5957ba38a64bba",
+    "licenseFiles": []
+  },
+  {
+    "name": "SkillRouter",
+    "url": "https://github.com/zhengyanzhao1997/SkillRouter.git",
+    "commit": "2f0c69fe6786bfee6312a1ab5d5f69abdc6bd245",
+    "licenseFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "SkillSight",
+    "url": "https://github.com/xiaojinying/SkillSight.git",
+    "commit": "0e3ac863a161501a46149c46f59ddf7960e2c71f",
+    "licenseFiles": []
+  }
+]

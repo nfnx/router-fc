@@ -1,0 +1,10 @@
+/data/skillret-v1.1/
+/data/skillret-research-v1.1*/
+/data/skillret-research-clean-v1.1*/
+__pycache__/
+*.py[cod]
+/.venv/
+/external/
+/models/
+/runs/
+/.cache/

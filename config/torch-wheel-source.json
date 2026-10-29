@@ -1,0 +1,6 @@
+{
+  "url": "https://download-r2.pytorch.org/whl/cu128/torch-2.7.1%2Bcu128-cp312-cp312-win_amd64.whl#sha256=2bb8c05d48ba815b316879a18195d53a6472a03e297d971e916753f8e1053d30",
+  "sha256": "2bb8c05d48ba815b316879a18195d53a6472a03e297d971e916753f8e1053d30",
+  "actual_sha256": "2bb8c05d48ba815b316879a18195d53a6472a03e297d971e916753f8e1053d30",
+  "verified": true
+}
