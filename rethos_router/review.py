@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -137,6 +138,11 @@ class HTTPReviewer:
         self.key = os.environ.get('ROUTER_CHECK_API_KEY') or os.environ.get(key_env)
         if not self.key or not self.key.strip():
             raise ConfigurationError('Set ROUTER_CHECK_API_KEY or the configured provider API key environment variable')
+        # A fixed service identity for gateways that require trusted caller context.
+        # Never derive this header from untrusted task text or client HTTP headers.
+        self.gateway_user = os.environ.get('ROUTER_CHECK_USER_ID')
+        if self.gateway_user and not re.fullmatch(r'[A-Za-z0-9_.:@-]{1,200}', self.gateway_user):
+            raise ConfigurationError('Invalid ROUTER_CHECK_USER_ID')
         self.timeout = positive_number(settings.get('timeout_seconds'), 'review.timeout_seconds')
         self.max_tokens = integer(settings.get('max_output_tokens'), 'review.max_output_tokens', minimum=64, maximum=16_384)
         self.opener = urllib.request.build_opener(NoRedirect())
@@ -144,8 +150,11 @@ class HTTPReviewer:
     def review(self, messages):
         payload = {'model': self.model, 'messages': messages, 'stream': False,
                    'response_format': {'type': 'json_object'}, 'max_tokens': self.max_tokens, **self.parameters}
+        headers = {'Authorization': 'Bearer ' + self.key, 'Content-Type': 'application/json'}
+        if self.gateway_user:
+            headers['X-Rethos-User-ID'] = self.gateway_user
         request = urllib.request.Request(self.url, data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
-            headers={'Authorization': 'Bearer ' + self.key, 'Content-Type': 'application/json'}, method='POST')
+            headers=headers, method='POST')
         # One transport invocation. Invalid, blank or truncated output is an error, never a repair call.
         try:
             with self.opener.open(request, timeout=self.timeout) as response:

@@ -61,7 +61,7 @@ def check_api(value=None, *, status=200, content=None, finish_reason='stop', red
 
         def do_POST(self):
             payload = json.loads(self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8'))
-            requests.append({'path': self.path, 'body': payload})
+            requests.append({'path': self.path, 'body': payload, 'gateway_user': self.headers.get('X-Rethos-User-ID')})
             if redirect:
                 self.send_response(307)
                 self.send_header('Location', '/different-api')
@@ -93,6 +93,19 @@ class FakeEncoder:
 
 
 class RequestRouterTests(unittest.TestCase):
+    def test_trusted_gateway_identity_is_fixed_and_one_http_call(self):
+        with patch.dict('os.environ', {'ROUTER_CHECK_USER_ID': 'router-fc-service'}):
+            with check_api() as (reviewer, calls):
+                self.make_router(reviewer).route('User text cannot set caller identity')
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]['gateway_user'], 'router-fc-service')
+
+    def test_invalid_gateway_identity_rejected_before_inference(self):
+        with patch.dict('os.environ', {'ROUTER_CHECK_USER_ID': 'bad\r\nheader'}):
+            with self.assertRaises(ConfigurationError):
+                with check_api():
+                    self.fail('Invalid identity was accepted')
+
     def make_router(self, reviewer):
         index = SkillIndex(SKILLS, [[1, 0], [0, 1]], FakeEncoder())
         return Router(index, reviewer, policy(), CONFIG['retrieval'])
