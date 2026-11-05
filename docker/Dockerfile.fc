@@ -1,0 +1,13 @@
+# GPU image is independent of OXR; no vLLM or OXR processes in this service.
+ARG BASE_IMAGE=rethos-gpu-registry-registry-vpc.cn-hangzhou.cr.aliyuncs.com/rethos/vllm-base:v0.25.1@sha256:f0b9a0dc75a9fca3b6811e3279367b2d6a448055a000bfd13859587d74cef268
+FROM ${BASE_IMAGE}
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 \
+    HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+    ROUTER_CONFIG=/app/config/request_router.fc.json ROUTER_INIT_TIMEOUT=600
+WORKDIR /app
+COPY . /app/
+RUN python3 -m venv --system-site-packages /opt/router-venv \
+    && /opt/router-venv/bin/python -m pip install -r deploy/fc/requirements.txt \
+    && /opt/router-venv/bin/python -m pip install --no-deps /app
+EXPOSE 9000
+ENTRYPOINT ["/opt/router-venv/bin/python", "/app/deploy/fc/gateway.py"]

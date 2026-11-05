@@ -1,0 +1,17 @@
+.git
+.venv
+models
+data
+indexes
+runs
+output
+__pycache__
+*.private.*
+.env*
+*.zip
+AGENTS.md
+CLAUDE.md
+.agents
+.codex
+**/tests
+tests

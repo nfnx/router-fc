@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "skill_pool_registry": "config/research_skill_pool.fc.json",
+  "skill_scope": "all",
+  "agent_registry": "config/research_eval/agent_registry.v0.1.json",
+  "max_request_chars": 32000,
+  "embedding": {
+    "model_path": "/mnt/router-assets/models/ThakiCloud--SKILLRET-Embedding-0.6B",
+    "weight_sha256": "f73118cac018ffa7ebb5a1ffbdf82034490dfb7f2559558f1e79277f1e8de172",
+    "device": "cuda",
+    "max_length": 4096,
+    "batch_size": 2,
+    "index_path": "/mnt/router-assets/indexes/request-router/skillret.npz"
+  },
+  "retrieval": {
+    "top_k": 5,
+    "max_selected_skills": 1,
+    "candidate_body_chars": 16000,
+    "total_candidate_body_chars": 50000
+  },
+  "review": {
+    "provider": "deepseek",
+    "providers": {
+      "deepseek": {
+        "base_url": "https://api.deepseek.com/v1",
+        "model": "deepseek-flash",
+        "api_key_env": "DEEPSEEK_API_KEY",
+        "request_parameters": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "glm": {
+        "base_url": "https://api.z.ai/api/paas/v4",
+        "model": "glm-5.3",
+        "api_key_env": "GLM_API_KEY",
+        "request_parameters": {
+          "reasoning_effort": "low"
+        }
+      }
+    },
+    "timeout_seconds": 120,
+    "max_output_tokens": 4096
+  },
+  "fallback": {
+    "default": {
+      "harness": "claude",
+      "model": "deepseek"
+    },
+    "by_model": {
+      "deepseek": {
+        "harness": "claude",
+        "model": "deepseek"
+      },
+      "glm": {
+        "harness": "claude",
+        "model": "glm"
+      }
+    }
+  }
+}

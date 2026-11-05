@@ -10,4 +10,9 @@ __pycache__/
 /.cache/
 /indexes/
 /data/research-skill-pool-v2-20261104/
+output/
+.pytest_cache/
+.env*
+*.private.*
+/research-skill-pool-*.zip
 /*.egg-info/
