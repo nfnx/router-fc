@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "version": "research-skill-pool-v2-20261104",
+  "purpose": "expanded_unlabeled_research_skill_pool",
+  "skills_path": "data/research-skill-pool-v2-20261104/skills.jsonl",
+  "new_skills_path": "data/research-skill-pool-v2-20261104/new_skills.jsonl",
+  "source_collected_path": "data/research-skill-pool-v2-20261104/source_collected/skills.jsonl",
+  "research_only_path": "data/research-skill-pool-v2-20261104/research_only/skills.jsonl",
+  "manifest_path": "data/research-skill-pool-v2-20261104/MANIFEST.json",
+  "manifest_sha256": "586759346a624fc13f905678359d880f5a26a1ac23bfd34e6198698b95d57031",
+  "counts": {
+    "total_skills": 734,
+    "new_skills": 609,
+    "baseline_updated": 3,
+    "research_only_skills": 653,
+    "source_collected_skills": 612
+  },
+  "changes_existing_benchmark_defaults": false,
+  "scenario_tests_executed": false
+}

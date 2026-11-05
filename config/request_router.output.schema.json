@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rethos request router output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["skills", "harness", "model"],
+  "properties": {
+    "skills": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "harness": {"enum": ["codex", "claude", "dsh"]},
+    "model": {"enum": ["deepseek", "glm"]}
+  }
+}

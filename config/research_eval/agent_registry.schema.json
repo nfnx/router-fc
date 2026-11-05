@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Evidence-based research Agent registry",
+  "type": "object",
+  "required": ["schema_version", "registry_id", "status", "production_applied", "task_types", "studies", "agents", "routing_policy", "provenance"],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "status": {"const": "provisional"},
+    "production_applied": {"const": false},
+    "agents": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/agent"}},
+    "routing_policy": {
+      "type": "object", "required": ["status", "auto_activation", "rules", "skill_exploration_overrides"],
+      "properties": {"status": {"const": "proposed"}, "auto_activation": {"const": false}, "rules": {"type": "array"}}
+    }
+  },
+  "$defs": {
+    "cohort": {
+      "type": "object", "required": ["value", "run_n", "unique_task_n", "task_ids", "run_keys"],
+      "properties": {
+        "value": {"type": ["number", "null"]},
+        "run_n": {"type": "integer", "minimum": 0},
+        "unique_task_n": {"type": "integer", "minimum": 0},
+        "task_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "run_keys": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "agent": {
+      "type": "object",
+      "required": ["agent_id", "configuration_fingerprint_sha256", "status", "study", "task_type", "model", "harness", "skills", "mcp_servers", "environment", "budget", "quality", "latency", "skill_usage", "paired_effect", "routing_annotation", "provenance"],
+      "properties": {
+        "agent_id": {"type": "string", "minLength": 1},
+        "configuration_fingerprint_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "status": {"const": "provisional"},
+        "study": {"enum": ["baseline", "ready"]},
+        "model": {"type": "object", "required": ["provider", "requested_id", "credential_ref", "upstream_weights_verified"]},
+        "harness": {"type": "object", "required": ["id", "version", "runtime_image_id", "native_skill_tool_enabled"]},
+        "skills": {"type": "array", "maxItems": 1, "items": {
+          "type": "object", "required": ["id", "name", "skill_md_sha256", "package_content_sha256", "activation"],
+          "properties": {"skill_md_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "package_content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+        }},
+        "quality": {"type": "object", "required": ["metric", "all_scored", "common_cohort", "planned_run_n", "scored_run_n", "not_scorable_n", "score_coverage"],
+          "properties": {"all_scored": {"$ref": "#/$defs/cohort"}, "common_cohort": {"$ref": "#/$defs/cohort"}, "score_coverage": {"type": "number", "minimum": 0, "maximum": 1}}},
+        "latency": {"type": "object", "required": ["metric", "statistic", "all_completed", "common_completed_cohort"],
+          "properties": {"metric": {"const": "wall_clock_seconds"}, "statistic": {"const": "median"}, "all_completed": {"$ref": "#/$defs/cohort"}, "common_completed_cohort": {"$ref": "#/$defs/cohort"}}},
+        "paired_effect": {"type": ["object", "null"]}
+      }
+    }
+  }
+}

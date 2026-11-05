@@ -8,3 +8,6 @@ __pycache__/
 /models/
 /runs/
 /.cache/
+/indexes/
+/data/research-skill-pool-v2-20261104/
+/*.egg-info/
