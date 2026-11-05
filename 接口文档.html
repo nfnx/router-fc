@@ -1,0 +1,177 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Router FC API</title><style>body{max-width:1100px;margin:40px auto;padding:0 24px;font:16px/1.75 system-ui;color:#172033}table{border-collapse:collapse;width:100%;display:block;overflow:auto}td,th{border:1px solid #d8dfe8;padding:9px;text-align:left}th{background:#f0f4fa}pre{background:#101c30;color:#e4efff;padding:18px;overflow:auto;border-radius:8px}code{overflow-wrap:anywhere}h1,h2,h3{line-height:1.35;margin-top:1.7em}a{color:#1465c0}</style><body><h1>Router 云函数接口文档</h1>
+<h2>1. 服务用途</h2>
+<p>Router 接收原始用户任务，使用 GPU 上的 SKILLRET-Embedding-0.6B 从 734 个技能中检索前 5 个候选，再向配置的 DeepSeek 复核模型发送一次请求，判断任务类型、技能适配性、速度偏好与执行模型约束。程序依据仓库既有评测策略选择 harness 与 model。</p>
+<p><strong>这是任务路由服务。它返回路由建议，不执行技能、启动 Agent、调用所选执行模型完成任务，也不解析图片或 PDF。</strong> 文档解析由独立 OXR 服务提供。</p>
+<p>业务接口只有 <strong>1 个：<code>POST /route</code></strong>。另外有根信息、存活、就绪与 OpenAPI 辅助接口。734 个技能全部参与检索；每次最多返回 1 个技能 ID，也允许空列表。技能 ID 是注册表中的稳定 ID，不能当作文件路径或技能名称。</p>
+<h2>2. 地址与鉴权</h2>
+<p>Base URL：</p>
+<pre><code class="language-text">https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run
+</code></pre>
+<p>所有外部请求都必须携带独立的 Router FC 客户端 Token：</p>
+<pre><code class="language-http">Authorization: Bearer &lt;FC_TOKEN&gt;
+</code></pre>
+<p>Token 在本机受保护 <code>.env.fc-test</code> 的 <code>ROUTER_FC_TOKEN</code> 中；预填 Token 的本地交付为项目根目录 <code>接口文档.private.html</code>，不要提交或共享该文件。无需给调用者阿里云 AccessKey 或复核模型凭据。OXR 的 Token 与 Router 的 Token 不通用。</p>
+<h2>3. 业务请求：提交任务路由</h2>
+<pre><code class="language-http">POST https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/route
+Authorization: Bearer &lt;FC_TOKEN&gt;
+Content-Type: application/json
+
+{
+  &quot;request&quot;: &quot;分析上传的实验 CSV，使用 Python 做回归分析、置信区间和残差图。&quot;
+}
+</code></pre>
+<p><code>request</code> 是唯一允许的字段，必须是非空字符串，最多 32000 个字符。整个请求体最大 1 MiB。直接传原始任务文本；此接口不接受文件、文件 URL、历史消息、模型选择字段或已经提取的标签。速度或执行模型要求写在任务文字里，例如“优先低延迟，只使用 GLM”。</p>
+<p>成功返回 HTTP 200，且只有以下三个字段。下例仅表示响应结构，不保证每次选择相同组合：</p>
+<pre><code class="language-json">{
+  &quot;skills&quot;: [],
+  &quot;harness&quot;: &quot;claude&quot;,
+  &quot;model&quot;: &quot;deepseek&quot;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+<th>范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>skills</td>
+<td>适用技能的稳定 ID</td>
+<td>0 或 1 个 ID；来自技能注册表</td>
+</tr>
+<tr>
+<td>harness</td>
+<td>建议的执行框架</td>
+<td>codex、claude、dsh</td>
+</tr>
+<tr>
+<td>model</td>
+<td>建议的执行模型提供方</td>
+<td>deepseek、glm</td>
+</tr>
+</tbody>
+</table>
+<p>云端实测中，“使用 GLM 分析实验数据”返回过以下结果，其中 ID 对应 <code>exploratory-data-analysis</code>：</p>
+<pre><code class="language-json">{
+  &quot;skills&quot;: [&quot;491075ab-c59a-5964-b04f-60e07fcf2e98&quot;],
+  &quot;harness&quot;: &quot;claude&quot;,
+  &quot;model&quot;: &quot;glm&quot;
+}
+</code></pre>
+<p>同一请求的技能选择可能受候选与复核模型影响，不应硬编码这个示例结果。</p>
+<p>支持的评测任务类型为固定语料检索、深度研究、研究报告、科学分析执行；混合任务依据明确主任务选择。缺少覆盖证据或其他任务采用配置中的默认组合。空技能是正常结果。评测策略是历史证据，不是未来任务质量保证。复核模型始终使用部署配置；返回 <code>model: glm</code> 不表示本次复核请求改用了 GLM。</p>
+<h3>curl</h3>
+<p>在终端设置 <code>ROUTER_FC_TOKEN</code> 环境变量后：</p>
+<pre><code class="language-bash">curl --connect-timeout 15 --max-time 900 \
+  'https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/route' \
+  -H &quot;Authorization: Bearer ${ROUTER_FC_TOKEN}&quot; \
+  -H 'Content-Type: application/json' \
+  --data '{&quot;request&quot;:&quot;调查钠离子电池衰减的最新研究，比较证据与局限，给出来源。&quot;}'
+</code></pre>
+<h3>Python</h3>
+<pre><code class="language-python">import os
+import requests
+
+response = requests.post(
+    &quot;https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/route&quot;,
+    headers={&quot;Authorization&quot;: &quot;Bearer &quot; + os.environ[&quot;ROUTER_FC_TOKEN&quot;]},
+    json={&quot;request&quot;: &quot;只使用 GLM，分析实验 CSV 并生成统计图。&quot;},
+    timeout=(15, 900),
+)
+response.raise_for_status()
+route = response.json()
+print(route)
+</code></pre>
+<h3>Postman</h3>
+<p>导入 <code>deploy/fc/router-fc.postman_collection.json</code>；<code>base_url</code> 已填写，<code>fc_token</code> 填 Router 客户端 Token。在 Authorization 选择继承集合鉴权；Body → raw → JSON，填写上面的 <code>request</code> 对象。首次冷启动将客户端超时调到 900000 ms。集合同时包含正常路由、GLM/DeepSeek 约束与错误输入断言；错误用例预期 4xx。</p>
+<h2>4. 辅助接口（逐项完整请求）</h2>
+<h3>根信息</h3>
+<pre><code class="language-http">GET https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/
+Authorization: Bearer &lt;FC_TOKEN&gt;
+</code></pre>
+<p>返回 <code>{"service":"rethos-router-fc","version":"1.0.0","route_path":"/route"}</code>。</p>
+<h3>存活</h3>
+<pre><code class="language-http">GET https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/health/live
+Authorization: Bearer &lt;FC_TOKEN&gt;
+</code></pre>
+<p>返回 <code>{"status":"alive"}</code>。这只代表 HTTP 进程存活，不证明上游模型可用。</p>
+<h3>就绪</h3>
+<pre><code class="language-http">GET https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/health/ready
+Authorization: Bearer &lt;FC_TOKEN&gt;
+</code></pre>
+<p>返回 <code>{"status":"ready"}</code> 代表技能、模型和索引初始化完成；尚未初始化或初始化失败返回 503。不会为每次健康检查发送复核模型请求。</p>
+<h3>OpenAPI</h3>
+<pre><code class="language-http">GET https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run/openapi.json
+Authorization: Bearer &lt;FC_TOKEN&gt;
+</code></pre>
+<p>接口定义也保存在 <code>deploy/fc/openapi.json</code>。FastAPI 默认交互页 <code>/docs</code>、<code>/redoc</code> 同样受 FC 鉴权；普通浏览器地址栏不会自动携带 Token，建议用 Postman 或本地导入 OpenAPI。</p>
+<p><code>POST /initialize</code> 是 FC 生命周期回调，不是日常业务接口，不应由客户端反复调用。</p>
+<h2>5. 错误与重试</h2>
+<table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>来源与含义</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td>空白、超长、错误类型、额外字段、重复 JSON 键或无效 JSON</td>
+<td>修正请求；不调用复核模型</td>
+</tr>
+<tr>
+<td>403</td>
+<td>FC 客户端 Token 缺失或错误</td>
+<td>检查触发器中启用的 Token</td>
+</tr>
+<tr>
+<td>404 / 405</td>
+<td>路径或方法错误</td>
+<td>使用 POST /route</td>
+</tr>
+<tr>
+<td>413</td>
+<td>请求体超过 1 MiB</td>
+<td>缩小文本</td>
+</tr>
+<tr>
+<td>415</td>
+<td>不是 application/json</td>
+<td>设置 Content-Type</td>
+</tr>
+<tr>
+<td>429</td>
+<td>实例忙或 FC 平台限流</td>
+<td>有界退避，避免持续重复提交</td>
+</tr>
+<tr>
+<td>502</td>
+<td>复核模型网络、超时或不合法决策</td>
+<td>记录失败；服务不会自动补第二次模型调用或伪造成功</td>
+</tr>
+<tr>
+<td>503</td>
+<td>Router 未就绪</td>
+<td>查看初始化日志，再有限重试</td>
+</tr>
+<tr>
+<td>500</td>
+<td>初始化或路由内部失败</td>
+<td>管理员检查 FC 日志</td>
+</tr>
+</tbody>
+</table>
+<p>FC 平台还可能返回 <code>ResourceExhausted</code>、<code>ResourceThrottled</code>、初始化失败等 JSON，其结构不同于 FastAPI 的 <code>detail</code> 错误。GPU 配额足够不代表随时有库存。</p>
+<p>本接口没有幂等键，也不保存任务结果。遇到连接中断时不能判定服务器是否已完成复核；重试可能再次产生模型费用。不要自动无限重试。</p>
+<h2>6. 部署与运行边界</h2>
+<p>函数名 <code>rethos-router</code>，杭州 Ampere 24 GB GPU，8 vCPU、32 GB 内存，单实例并发 1，最小实例数 0。无可用实例时由 FC 分配 GPU，初始化后处理请求；已有空闲实例可复用，不是每次调用都新开一台机器。空闲回收时间由平台决定，不承诺固定保留时长。</p>
+<p>镜像保存代码和依赖；权重、734 个技能与检索索引保存在独立 NAS 子目录 <code>/router</code>，函数挂载到 <code>/mnt/router-assets</code>。实例回收不会删除这些文件。新实例仍需读取权重并加载 GPU；首次无缓存索引时还需构建技能向量。索引身份包含技能顺序、正文摘要、权重和依赖版本，变化后自动重建。NAS 不代表零冷启动时间。</p>
+<p>权重固定为 <code>ThakiCloud/SKILLRET-Embedding-0.6B</code> 的 revision <code>67f1594c46c40e13a5eb2f4092cc85c98c9ed32d</code>，主权重 1191586416 字节，SHA256 <code>f73118cac018ffa7ebb5a1ffbdf82034490dfb7f2559558f1e79277f1e8de172</code>。运行期间仅从 NAS 本地路径读取，不在线下载权重。</p>
+<p>FC 执行超时 240 秒，初始化回调上限 660 秒，内部初始化上限 600 秒；复核上游请求超时 120 秒。客户端首次调用需为镜像准备与冷启动预留时间。不要根据一次短测承诺吞吐或 SLA。</p>
+<p>生产调用可另配自定义域名；当前交付使用现有 FC 默认域名。详细实际验证及未验证边界见 <code>docs/FC部署验收.md</code>。</p>
+<p>本轮首次就绪实测约 196 秒，包含首次初始化；修正版在已存在 NAS 索引时就绪约 7.06 秒，前面另发生过镜像加速未就绪的 412，不能把 7.06 秒当作从发布镜像到可用的总时长。真实业务请求约 2.33–13.64 秒，受外部复核模型延迟影响；短测不代表长期时延保证。</p></body></html>

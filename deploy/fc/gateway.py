@@ -32,7 +32,7 @@ class RouteOutput(BaseModel):
 
 
 def load_router():
-    # The FC-specific config points to NAS model/data and an instance-local index.
+    # The FC-specific config points to NAS model/data and a shared NAS index.
     path = os.environ.get("ROUTER_CONFIG", "/app/config/request_router.fc.json")
     return Router.from_config(path, root=Path("/app"))
 

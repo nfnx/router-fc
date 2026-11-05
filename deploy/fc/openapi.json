@@ -1,0 +1,157 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Rethos Router on Alibaba FC",
+    "description": "FC trigger requires Bearer authentication. Successful routing returns exactly three fields.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "summary": "Live",
+        "operationId": "live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "summary": "Ready",
+        "operationId": "ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/route": {
+      "post": {
+        "summary": "Route",
+        "operationId": "route_route_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "maxLength": 32000,
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "request"
+                ],
+                "example": {
+                  "request": "Compare recent evidence and write a literature review."
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RouteOutput": {
+        "properties": {
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills",
+            "description": "Stable IDs from the configured skill registry; may be empty."
+          },
+          "harness": {
+            "type": "string",
+            "enum": [
+              "codex",
+              "claude",
+              "dsh"
+            ],
+            "title": "Harness"
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "deepseek",
+              "glm"
+            ],
+            "title": "Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skills",
+          "harness",
+          "model"
+        ],
+        "title": "RouteOutput"
+      }
+    },
+    "securitySchemes": {
+      "FCBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "security": [
+    {
+      "FCBearer": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run",
+      "description": "Target endpoint; see release receipt for deployed version"
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+{
+  "info": {
+    "name": "Router Alibaba FC - routing acceptance",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "One business API, GPU retrieval and one review call. Error cases intentionally expect 4xx. Use independent Router token."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{fc_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run"
+    },
+    {
+      "key": "fc_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Service version",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Router identity', () => pm.expect(pm.response.json().service).eq('rethos-router-fc'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Live",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health/live",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Alive', () => pm.expect(pm.response.json().status).eq('alive'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Ready",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health/ready",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Ready', () => pm.expect(pm.response.json().status).eq('ready'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 OpenAPI",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/openapi.json",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Business operation', () => pm.expect(pm.response.json().paths['/route']).to.have.property('post'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Corpus retrieval",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"Search only the uploaded fixed paper corpus and provide cited evidence on CRISPR off-target measurement.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Exactly three fields', () => pm.expect(Object.keys(pm.response.json()).sort()).deep.eq(['harness','model','skills']));",
+              "pm.test('Valid route', () => {const b=pm.response.json();pm.expect(['codex','claude','dsh']).include(b.harness);pm.expect(['deepseek','glm']).include(b.model);pm.expect(b.skills).to.be.an('array');pm.expect(b.skills.length).at.most(1);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Deep research",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"Research current evidence on sodium-ion battery degradation and synthesize sources.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Exactly three fields', () => pm.expect(Object.keys(pm.response.json()).sort()).deep.eq(['harness','model','skills']));",
+              "pm.test('Valid route', () => {const b=pm.response.json();pm.expect(['codex','claude','dsh']).include(b.harness);pm.expect(['deepseek','glm']).include(b.model);pm.expect(b.skills).to.be.an('array');pm.expect(b.skills.length).at.most(1);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Research report",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"Produce a research report covering every rubric item, with methods, evidence, limitations and conclusions.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Exactly three fields', () => pm.expect(Object.keys(pm.response.json()).sort()).deep.eq(['harness','model','skills']));",
+              "pm.test('Valid route', () => {const b=pm.response.json();pm.expect(['codex','claude','dsh']).include(b.harness);pm.expect(['deepseek','glm']).include(b.model);pm.expect(b.skills).to.be.an('array');pm.expect(b.skills.length).at.most(1);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Scientific execution",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"Analyze the uploaded CSV in Python, fit a regression and plot confidence intervals.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Exactly three fields', () => pm.expect(Object.keys(pm.response.json()).sort()).deep.eq(['harness','model','skills']));",
+              "pm.test('Valid route', () => {const b=pm.response.json();pm.expect(['codex','claude','dsh']).include(b.harness);pm.expect(['deepseek','glm']).include(b.model);pm.expect(b.skills).to.be.an('array');pm.expect(b.skills.length).at.most(1);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 GLM constraint",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"Use GLM only. Analyze experimental data and generate statistical plots.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Exactly three fields', () => pm.expect(Object.keys(pm.response.json()).sort()).deep.eq(['harness','model','skills']));",
+              "pm.test('Valid route', () => {const b=pm.response.json();pm.expect(['codex','claude','dsh']).include(b.harness);pm.expect(['deepseek','glm']).include(b.model);pm.expect(b.skills).to.be.an('array');pm.expect(b.skills.length).at.most(1);});",
+              "pm.test('Provider preserved', () => pm.expect(pm.response.json().model).eq('glm'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 DeepSeek speed constraint",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"Use DeepSeek only. Prioritize low latency. Investigate evidence on battery recycling.\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Exactly three fields', () => pm.expect(Object.keys(pm.response.json()).sort()).deep.eq(['harness','model','skills']));",
+              "pm.test('Valid route', () => {const b=pm.response.json();pm.expect(['codex','claude','dsh']).include(b.harness);pm.expect(['deepseek','glm']).include(b.model);pm.expect(b.skills).to.be.an('array');pm.expect(b.skills.length).at.most(1);});",
+              "pm.test('Provider preserved', () => pm.expect(pm.response.json().model).eq('deepseek'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Reject blank",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \" \"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Reject extra field",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\": \"hello\", \"extra\": true}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Reject duplicate JSON key",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"request\":\"a\",\"request\":\"b\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Reject wrong content type",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/route",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "hello"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 415', () => pm.response.to.have.status(415));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 Reject missing token",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health/live",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
