@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import asynccontextmanager
 import logging
+import json
 import os
 from pathlib import Path
 from typing import Literal
@@ -129,7 +130,8 @@ def create_app(factory=Runtime):
         except ReviewError as error:
             # ReviewError messages are fixed, server-owned diagnostics from
             # review.py; they never contain input text, response bodies or keys.
-            LOG.warning("Skill review failed: %s", error)
+            print(json.dumps({'level':'WARN','event':'router.review_failed',
+                              'reason':str(error)}),flush=True)
             raise HTTPException(502, "Skill review failed; no retry was made")
         except asyncio.CancelledError:
             # The executor thread cannot be interrupted safely. Retain it until
