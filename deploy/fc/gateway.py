@@ -126,7 +126,10 @@ def create_app(factory=Runtime):
             return await asyncio.shield(task)
         except RequestError:
             raise HTTPException(400, "Invalid routing request")
-        except ReviewError:
+        except ReviewError as error:
+            # ReviewError messages are fixed, server-owned diagnostics from
+            # review.py; they never contain input text, response bodies or keys.
+            LOG.warning("Skill review failed: %s", error)
             raise HTTPException(502, "Skill review failed; no retry was made")
         except asyncio.CancelledError:
             # The executor thread cannot be interrupted safely. Retain it until
