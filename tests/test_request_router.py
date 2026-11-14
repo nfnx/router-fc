@@ -179,14 +179,25 @@ class RequestRouterTests(unittest.TestCase):
             Decision('corpus_retrieval',None,'quality_first',None,())),
             {'harness':'claude','model':'deepseek'})
 
-    def test_out_of_candidate_and_extra_fields_fail_without_second_model_call(self):
+    def test_invalid_decisions_exhaust_three_retries_without_fabricated_success(self):
         for value in [decision(selected_skill_ids=['invented-skill']), decision(harness='codex'),
                       decision(task_type='made-up'), decision(primary_task_type='deep_research'),
                       decision(selected_skill_ids=['skill-a', 'skill-b']), decision(selected_skill_ids=[{}])]:
             with self.subTest(value=value), check_api(value) as (reviewer, calls):
                 with self.assertRaises(ReviewError):
                     self.make_router(reviewer).route('Analyze data')
-                self.assertEqual(len(calls), 1)
+                self.assertEqual(len(calls), 4)
+
+    def test_invalid_skill_selection_can_recover_without_retrieving_again(self):
+        reviewer=Mock();reviewer.review.side_effect=[decision(selected_skill_ids=['invented-skill']),decision()]
+        router=self.make_router(reviewer)
+        result=router.route('Analyze data')
+        self.assertEqual(result['skills'],['skill-a'])
+        self.assertEqual(reviewer.review.call_count,2)
+        self.assertEqual(len(router.index.encoder.calls),1)
+        correction=reviewer.review.call_args.args[0][-1]['content']
+        self.assertIn('exact candidate id',correction)
+        self.assertNotIn('invented-skill',correction)
 
     def test_blank_malformed_truncated_and_http_errors_do_not_retry(self):
         cases = [{'content': ' '}, {'content': 'not json'}, {'content': '{"task_type":"other","task_type":"other"}'},

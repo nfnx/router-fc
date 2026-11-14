@@ -9,6 +9,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import logging
 import json
+import sys
 import os
 from pathlib import Path
 from typing import Literal
@@ -95,6 +96,8 @@ def create_app(factory=Runtime):
         return {"status": "ready"}
 
     @app.post("/route", response_model=RouteOutput,
+              description="Concurrent routing. A valid first decision uses one review; invalid structured decisions may be reselected up to three times without relaxing candidate or count checks. Transport retries belong to the model gateway.",
+              responses={502:{'description':'Review failed or four structured decisions remained invalid; inspect correlated native logs.'},503:{'description':'Router not initialized.'},429:{'description':'Cloud platform capacity rejection; no application-level single-request admission lock.'}},
               openapi_extra={"requestBody": {"required": True, "content": {"application/json": {"schema": {
                   "type": "object", "required": ["request"], "additionalProperties": False,
                   "properties": {"request": {"type": "string", "minLength": 1, "maxLength": 32000}},
@@ -132,7 +135,7 @@ def create_app(factory=Runtime):
             # review.py; they never contain input text, response bodies or keys.
             print(json.dumps({'level':'WARN','event':'router.review_failed',
                               'reason':str(error)}),flush=True)
-            raise HTTPException(502, "Skill review failed; no retry was made")
+            raise HTTPException(502, "Skill review failed; inspect logs")
         except asyncio.CancelledError:
             # The executor thread cannot be interrupted safely. Retain it until
             # completion so shutdown never abandons ongoing model work.
@@ -155,5 +158,6 @@ def create_app(factory=Runtime):
 app = create_app()
 
 if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stdout,level=logging.INFO,format='%(message)s')
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=9000, workers=1)
