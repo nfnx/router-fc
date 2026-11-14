@@ -57,6 +57,7 @@
     "/route": {
       "post": {
         "summary": "Route",
+        "description": "Concurrent routing. A valid first decision uses one review; invalid structured decisions may be reselected up to three times without relaxing candidate or count checks. Transport retries belong to the model gateway.",
         "operationId": "route_route_post",
         "requestBody": {
           "content": {
@@ -92,6 +93,15 @@
                 }
               }
             }
+          },
+          "502": {
+            "description": "Review failed or four structured decisions remained invalid; inspect correlated native logs."
+          },
+          "503": {
+            "description": "Router not initialized."
+          },
+          "429": {
+            "description": "Cloud platform capacity rejection; no application-level single-request admission lock."
           }
         }
       }
@@ -146,12 +156,6 @@
   "security": [
     {
       "FCBearer": []
-    }
-  ],
-  "servers": [
-    {
-      "url": "https://rethos-router-rpboglliga.cn-hangzhou.fcapp.run",
-      "description": "Target endpoint; see release receipt for deployed version"
     }
   ]
 }
