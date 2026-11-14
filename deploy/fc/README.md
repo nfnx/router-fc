@@ -2,6 +2,8 @@
 
 源码入口 `gateway.py`，镜像入口 `docker/Dockerfile.fc`。不启动 OXR、vLLM 服务，也不改变原命令行 Router。默认容器启动命令由镜像 ENTRYPOINT 决定，监听 9000；不沿用演示镜像的 `/code/run.sh`。
 
+2026-11-14 并发适配：HTTP 层不再以整请求互斥锁返回 `429 instance_busy`。独立请求的复核模型调用可以重叠，GPU 编码仍由 `SkillRetEncoder` 内部的模型锁保护；这是共享 GPU 的执行顺序，不是业务准入上限。线程执行器排队，初始化、取消等待、鉴权和严格结果校验保持。增量构建 `docker/Dockerfile.fc-concurrent` 复用原镜像 digest，只替换此 HTTP 适配器。部署后的实际并发结果以运维回执为准。
+
 ## 已部署资源
 
 - 地域 cn-hangzhou；函数 rethos-router；业务 POST /route。

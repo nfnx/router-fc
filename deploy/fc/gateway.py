@@ -43,7 +43,6 @@ class Runtime:
         self.router = None
         self.failed = False
         self.init_lock = asyncio.Lock()
-        self.route_lock = asyncio.Lock()
         self.initialization = None
 
     async def initialize(self):
@@ -119,23 +118,24 @@ def create_app(factory=Runtime):
         runtime = request.app.state.runtime
         if runtime.router is None or runtime.failed:
             raise HTTPException(503, "router_not_ready")
-        if runtime.route_lock.locked():
-            raise HTTPException(429, "instance_busy")
-        async with runtime.route_lock:
-            task = asyncio.create_task(asyncio.to_thread(runtime.router.route, text))
-            try:
-                return await asyncio.shield(task)
-            except RequestError:
-                raise HTTPException(400, "Invalid routing request")
-            except ReviewError:
-                raise HTTPException(502, "Skill review failed; no retry was made")
-            except asyncio.CancelledError:
-                # Do not free the GPU/model slot while the thread still runs.
-                await asyncio.gather(task, return_exceptions=True)
-                raise
-            except Exception:
-                LOG.exception("Routing failed")
-                raise HTTPException(500, "Routing failed")
+        # GPU encoding already owns a narrow model lock in SkillRetEncoder.
+        # Independent reviews can overlap; queuing work in the executor must
+        # not reject a second request merely because the first is in flight.
+        task = asyncio.create_task(asyncio.to_thread(runtime.router.route, text))
+        try:
+            return await asyncio.shield(task)
+        except RequestError:
+            raise HTTPException(400, "Invalid routing request")
+        except ReviewError:
+            raise HTTPException(502, "Skill review failed; no retry was made")
+        except asyncio.CancelledError:
+            # The executor thread cannot be interrupted safely. Retain it until
+            # completion so shutdown never abandons ongoing model work.
+            await asyncio.gather(task, return_exceptions=True)
+            raise
+        except Exception:
+            LOG.exception("Routing failed")
+            raise HTTPException(500, "Routing failed")
 
     schema = app.openapi
     def authenticated_schema():

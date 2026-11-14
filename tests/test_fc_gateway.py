@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 
@@ -57,5 +59,16 @@ class FCGatewayTests(unittest.TestCase):
         response=self.client.post('/route',json={'request':'research'})
         self.assertEqual(response.status_code,502)
         self.assertNotIn('skills',response.json())
+    def test_independent_reviews_overlap_instead_of_rejecting_busy(self):
+        self.client.post('/initialize')
+        entered=threading.Barrier(4)
+        def route(text):
+            entered.wait(timeout=5)
+            return {'skills':[text],'harness':'claude','model':'deepseek'}
+        self.client.app.state.runtime.router.route=route
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            responses=list(pool.map(lambda i:self.client.post('/route',json={'request':str(i)}),range(4)))
+        self.assertEqual([r.status_code for r in responses],[200]*4)
+        self.assertEqual([r.json()['skills'] for r in responses],[[str(i)] for i in range(4)])
 
 if __name__=='__main__':unittest.main()
